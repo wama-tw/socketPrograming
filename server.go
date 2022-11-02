@@ -16,37 +16,45 @@ func main() {
 	listener, err := net.ListenTCP("tcp", tcpAddr)
 	fmt.Println(tcpAddr)
 	checkError(err)
+
+	var connections []net.Conn
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			continue
 		}
-		go handleClient(conn)
+		connections = append(connections, conn)
+		go handleClient(conn, &connections)
 	}
 }
 
-func handleClient(conn net.Conn) {
+func handleClient(conn net.Conn, connections *[]net.Conn) {
 	conn.SetReadDeadline(time.Now().Add(2 * time.Minute)) // set 2 minutes timeout
 	defer conn.Close()                                    // close connection before exit
 
 	println("connected: ", conn.RemoteAddr())
-	waitGroup := &sync.WaitGroup{}
-	waitGroup.Add(2)
+	handleClientWaitGroup := &sync.WaitGroup{}
+	handleClientWaitGroup.Add(2)
 
 	var done context.CancelFunc
 	ctx, done := context.WithCancel(context.Background())
 
 	message := make(chan string, 10)
-	go getRequest(conn, message, done, waitGroup)  // Get request
-	go sendResponse(conn, message, ctx, waitGroup) // Response
+	go getRequest(conn, message, done, handleClientWaitGroup)               // Get request
+	go sendResponse(conn, message, ctx, handleClientWaitGroup, connections) // Response
 
-	waitGroup.Wait()
+	handleClientWaitGroup.Wait()
 	println(conn.RemoteAddr(), " :handleClient return")
+	(*connections) = remove((*connections), conn)
 	return
 }
 
-func getRequest(conn net.Conn, message chan string, done context.CancelFunc, waitGroup *sync.WaitGroup) {
-	defer waitGroup.Done()
+func getRequest(
+	conn net.Conn, message chan string,
+	done context.CancelFunc,
+	handleClientWaitGroup *sync.WaitGroup,
+) {
+	defer handleClientWaitGroup.Done()
 	request := make([]byte, 128) // set maxium request length to 128B to prevent flood attack
 	for {
 		read_len, err := conn.Read(request)
@@ -66,14 +74,25 @@ func getRequest(conn net.Conn, message chan string, done context.CancelFunc, wai
 	}
 }
 
-func sendResponse(conn net.Conn, message chan string, ctx context.Context, waitGroup *sync.WaitGroup) {
-	defer waitGroup.Done()
+func sendResponse(
+	conn net.Conn,
+	message chan string,
+	ctx context.Context,
+	handleClientWaitGroup *sync.WaitGroup,
+	connections *[]net.Conn,
+) {
+	defer handleClientWaitGroup.Done()
 	for {
-		request_msg := <-message
-		println("client sent: ", request_msg)
-		response := ("Received: " + request_msg)
-		conn.Write([]byte(response))
-		println("Sent to client: ", []byte(response), " ", response)
+		requestMsg := <-message
+		println("client sent: ", requestMsg)
+		broadcastMsg := (fmt.Sprint(conn.RemoteAddr()) + " said: " + requestMsg)
+		for _, connection := range *connections {
+			println("sending message to ", fmt.Sprint(connection.RemoteAddr()))
+			connection.Write([]byte(broadcastMsg))
+		}
+		// response := ("Received: " + requestMsg)
+		// conn.Write([]byte(response))
+		println("Sent to clients: ", []byte(broadcastMsg), " ", broadcastMsg)
 		println("-------------------------------------")
 
 		select {
@@ -83,6 +102,16 @@ func sendResponse(conn net.Conn, message chan string, ctx context.Context, waitG
 			continue
 		}
 	}
+}
+
+func remove(s []net.Conn, remove net.Conn) []net.Conn {
+	for index, element := range s {
+		if element == remove {
+			s[index] = s[len(s)-1]
+			break
+		}
+	}
+	return s[:len(s)-1]
 }
 
 func notEmpty(msg string) bool {
