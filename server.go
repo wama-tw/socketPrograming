@@ -86,12 +86,18 @@ func sendResponse(
 		requestMsg := <-message
 		println("client sent: ", requestMsg)
 		broadcastMsg := (fmt.Sprint(conn.RemoteAddr()) + " said: " + requestMsg)
+		sendResponseWaitGroup := &sync.WaitGroup{}
 		for _, connection := range *connections {
-			println("sending message to ", fmt.Sprint(connection.RemoteAddr()))
-			connection.Write([]byte(broadcastMsg))
+			sendResponseWaitGroup.Add(1)
+			go func(connection net.Conn, sendResponseWaitGroup *sync.WaitGroup) {
+				println("sending message to ", fmt.Sprint(connection.RemoteAddr()))
+				connection.Write([]byte(broadcastMsg))
+				sendResponseWaitGroup.Done()
+			}(connection, sendResponseWaitGroup)
 		}
 		// response := ("Received: " + requestMsg)
 		// conn.Write([]byte(response))
+		sendResponseWaitGroup.Wait()
 		println("Sent to clients: ", []byte(broadcastMsg), " ", broadcastMsg)
 		println("-------------------------------------")
 
