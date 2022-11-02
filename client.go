@@ -17,7 +17,6 @@ func main() {
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)
 	checkError(err)
 
-	// done := make(chan bool)
 	waitGroup := &sync.WaitGroup{}
 	waitGroup.Add(2)
 
