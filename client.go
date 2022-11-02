@@ -23,14 +23,14 @@ func main() {
 
 	var done context.CancelFunc
 	ctx, done := context.WithCancel(context.Background())
-	go write(conn, done, waitGroup) // WRITE
-	go read(conn, ctx, waitGroup)   // READ
+	go sendRequest(conn, done, waitGroup) // WRITE
+	go getResponse(conn, ctx, waitGroup)  // READ
 
 	waitGroup.Wait()
 	os.Exit(0)
 }
 
-func write(conn net.Conn, done context.CancelFunc, waitGroup *sync.WaitGroup) {
+func sendRequest(conn net.Conn, done context.CancelFunc, waitGroup *sync.WaitGroup) {
 	defer waitGroup.Done()
 	for {
 		msg := ""
@@ -46,7 +46,7 @@ func write(conn net.Conn, done context.CancelFunc, waitGroup *sync.WaitGroup) {
 	}
 }
 
-func read(conn net.Conn, ctx context.Context, waitGroup *sync.WaitGroup) {
+func getResponse(conn net.Conn, ctx context.Context, waitGroup *sync.WaitGroup) {
 	defer waitGroup.Done()
 	response := make([]byte, 128)
 
