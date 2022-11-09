@@ -1,0 +1,172 @@
+<!doctype html>
+<html class="h-full w-full">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://gnehs.github.io/ChatUI/css/ChatUI.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC&display=swap" rel="stylesheet">
+  <style>
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .scrollable::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .scrollable {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+  </style>
+</head>
+
+<body class="flex h-full w-full">
+  <div class="scrollable 2xl:overflow-y-scroll xl:overflow-y-scroll lg:overflow-y-scroll overflow-hidden flex-auto max-h-full 2xl:w-1/4 xl:w-1/4 lg:w-1/4 md:w-0 sm:w-0 w-0 text-white chiness flex-col border-r border-gray-500 border-opacity-70 bg-gray-800">
+    <div class="m-5 p-3 border border-gray-500 border-opacity-70 rounded-lg hover:bg-gray-600 transition duration-500">
+      <h1 class="text-2xl font-semibold mb-2">Information</h1>
+      <p class="text-sm">
+        計算機網路 Socket Programming 作業</br>
+        This is a Golang project</br>
+        Front-end using <a href="https://gnehs.github.io/ChatUIDoc/#%E8%A8%8A%E6%81%AF">Chat UI</a> & <a href="https://tailwindcss.com/docs">Tailwind CSS</a></br>
+        This project is made with ❤️ by 資工三 109502544 溫婕宇 (aka Wama)
+      </p>
+    </div>
+    <div class="m-5 p-3 border border-gray-500 border-opacity-70 rounded-lg hover:bg-gray-600 transition duration-500">
+      <h1 class="text-2xl font-semibold mb-2">GitHub</h1>
+      <p class="text-sm">
+        This project is an open source on GitHub</br>
+        </br>
+        Wama's GitHub: <a class="underline" href="https://github.com/wama-tw">wama-tw</a></br>
+        This project's GitHub page: <a class="underline" href="https://github.com/wama-tw/socketPrograming">wama-t/socketPrograming</a>
+      </p>
+    </div>
+    <a class="cursor-pointer" href="https://www.twitch.tv/wamatw">
+    <div class="m-5 p-3 border border-gray-500 border-opacity-70 rounded-lg hover:bg-gray-600 transition duration-500">
+      <h1 class="text-2xl font-semibold mb-2">Twitch</h1>
+      <p class="text-sm">
+        Welcome to check Wama's Twitch page</br>
+        This project was written by Wama during live broadcasts on Twitch
+      </p>
+    </div>
+    </a>
+    <a class="cursor-pointer" href="https://www.instagram.com/parrot1026">
+    <div class="m-5 p-3 border border-gray-500 border-opacity-70 rounded-lg hover:bg-gray-600 transition duration-500">
+      <h1 class="text-2xl font-semibold mb-2">The Parrot</h1>
+      <p class="text-sm">
+        If you like the parrot in the background image</br>
+        You can follow the parrot's Instagram account
+      </p>
+    </div>
+    </a>
+  </div>
+  <div id="chat" class="scrollable cu chat flex-auto max-h-full min-w-max overflow-y-scroll relative" data-style="telegram" style="background-image:url(https://i.imgur.com/IeSrAcz.png);background-position: top center;">
+    <div class="message text">
+      <div class="content">
+        <!-- 傳訊者 -->
+        <div class="author">
+          Wama
+        </div>
+        <!-- 文字 -->
+        <div class="text">
+          <p>尼好，世界</p>
+        </div>
+        <!-- 中繼資料 -->
+        <div class="meta">
+          <div class="item">
+            10:26
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="placeholder" class="min-h-12"></br></br></br></br></br></div>
+  </div>
+  <form id="form" class="w-full flex fixed bottom-0 right-0 pb-6 z-10">
+    <div class="flex-none 2xl:w-1/5 xl:w-1/5 lg:w-1/5 md:w-0 sm:w-0 w-0"></div>
+    <div class="flex flex-1 w-full px-2 mx-3">
+      <input class="flex-1 shadow-2xl rounded-lg px-2" type="text" id="msg" size="64" autofocus/>
+      <input class="flex-none shadow-2xl rounded-lg bg-yellow-300 p-1 ml-3 w-auto" type="submit" value="Send"/>
+    </div>
+  </form>
+</body>
+
+<script>
+  let conn;
+  let chat = document.getElementById("chat");
+  conn = new WebSocket("ws://" + document.location.host + "/room/ws");
+
+  let messageJSON;
+  conn.onmessage = function (evt) {
+    messageJSON = JSON.parse(evt.data);
+    let placeholder = document.getElementById("placeholder");
+    placeholder.remove()
+    if (messageJSON.exit) {
+      let divider = document.createElement("divider");
+      divider.innerText = (messageJSON.author + " 已離開聊天室");
+      chat.appendChild(divider);
+      chat.appendChild(placeholder);
+      return
+    }
+    if (messageJSON.join) {
+      let divider = document.createElement("divider");
+      divider.innerText = (messageJSON.author + " 已加入聊天");
+      chat.appendChild(divider);
+      chat.appendChild(placeholder);
+      return
+    }
+    // author
+    let author = document.createElement("div");
+    author.className = "author";
+    author.innerText = messageJSON.author;
+    // text
+    let text = document.createElement("div");
+    text.className = "text";
+    let text_p = document.createElement("p");
+    text_p.innerText = messageJSON.text;
+    text.appendChild(text_p);
+    // item
+    let meta = document.createElement("div");
+    meta.className = "meta";
+    let item = document.createElement("div");
+    item.className = "item";
+    item.innerText = messageJSON.time;
+    meta.appendChild(item);
+    // compose content
+    let content = document.createElement("div");
+    content.className = "content";
+    content.appendChild(author);
+    content.appendChild(text);
+    content.appendChild(meta);
+    let message = document.createElement("div");
+    message.className = "message text";
+    if (messageJSON.author == "我") {
+      message.className = "message text right";
+    }
+    message.appendChild(content)
+    chat.appendChild(message);
+    chat.appendChild(placeholder);
+    updateScroll();
+  };
+
+  let msg = document.getElementById("msg");
+  document.getElementById("form").onsubmit = function () {
+    if (!conn) {
+      return false;
+    }
+    if (!msg.value) {
+      return false;
+    }
+    conn.send(msg.value);
+    console.log(msg.value)
+    console.log(conn)
+    msg.value = "";
+    return false;
+  };
+
+  function updateScroll(){
+    var element = document.getElementById("placeholder");
+    element.scrollIntoView(false);
+  }
+</script>
