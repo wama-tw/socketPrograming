@@ -24,7 +24,7 @@
 </head>
 
 <body class="flex h-full w-full">
-  <div class="scrollable 2xl:overflow-y-scroll xl:overflow-y-scroll lg:overflow-y-scroll overflow-hidden flex-auto max-h-full 2xl:w-1/4 xl:w-1/4 lg:w-1/4 md:w-0 sm:w-0 w-0 text-white chiness flex-col border-r border-gray-500 border-opacity-70 bg-gray-800">
+  <div class="z-20 scrollable 2xl:overflow-y-scroll xl:overflow-y-scroll lg:overflow-y-scroll overflow-hidden flex-auto max-h-full 2xl:w-1/4 xl:w-1/4 lg:w-1/4 md:w-0 sm:w-0 w-0 text-white chiness flex-col border-r border-gray-500 border-opacity-70 bg-gray-800">
     <div class="m-5 p-3 border border-gray-500 border-opacity-70 rounded-lg hover:bg-gray-600 transition duration-500">
       <h1 class="text-2xl font-semibold mb-2">Information</h1>
       <p class="text-sm">
@@ -107,6 +107,7 @@
       divider.innerText = (messageJSON.author + " 已離開聊天室");
       chat.appendChild(divider);
       chat.appendChild(placeholder);
+      updateScroll();
       return
     }
     if (messageJSON.join) {
@@ -114,6 +115,7 @@
       divider.innerText = (messageJSON.author + " 已加入聊天");
       chat.appendChild(divider);
       chat.appendChild(placeholder);
+      updateScroll();
       return
     }
     // author
@@ -167,6 +169,6 @@
 
   function updateScroll(){
     var element = document.getElementById("placeholder");
-    element.scrollIntoView(false);
+    element.scrollIntoView({behavior:"smooth"});
   }
 </script>
