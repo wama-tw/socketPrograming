@@ -144,34 +144,33 @@ func sendResponse(
 ) {
 	defer handleClientWaitGroup.Done()
 	for {
-		broadcastMsg := <-message
-		if !broadcastMsg.Exit {
-			println("client sent: ", broadcastMsg.Text)
-			sendResponseWaitGroup := &sync.WaitGroup{}
-			for _, connection := range *connections {
-				sendResponseWaitGroup.Add(1)
-				go func(connection net.Conn, sendResponseWaitGroup *sync.WaitGroup) {
-					encoder := json.NewEncoder(connection)
-					sendingMsg := broadcastMsg
-					println("sending message to ", connection.RemoteAddr().String())
-					if sendingMsg.Author == connection.RemoteAddr().String() {
-						sendingMsg.Author = "我"
-					} else {
-						sendingMsg.Author = name[conn.RemoteAddr().String()]
-					}
-					err := encoder.Encode(sendingMsg)
-					if err != nil {
-						println("Error occur while sending to", connection.RemoteAddr().String(), ": ", err.Error())
-					}
-					sendResponseWaitGroup.Done()
-				}(connection, sendResponseWaitGroup)
-			}
-			sendResponseWaitGroup.Wait()
-			println("Sent to clients: ", broadcastMsg.Text)
-			println("-------------------------------------")
-		}
-
 		select {
+		case broadcastMsg := <-message:
+			if !broadcastMsg.Exit {
+				println("client sent: ", broadcastMsg.Text)
+				sendResponseWaitGroup := &sync.WaitGroup{}
+				for _, connection := range *connections {
+					sendResponseWaitGroup.Add(1)
+					go func(connection net.Conn, sendResponseWaitGroup *sync.WaitGroup) {
+						encoder := json.NewEncoder(connection)
+						sendingMsg := broadcastMsg
+						println("sending message to ", connection.RemoteAddr().String())
+						if sendingMsg.Author == connection.RemoteAddr().String() {
+							sendingMsg.Author = "我"
+						} else {
+							sendingMsg.Author = name[conn.RemoteAddr().String()]
+						}
+						err := encoder.Encode(sendingMsg)
+						if err != nil {
+							println("Error occur while sending to", connection.RemoteAddr().String(), ": ", err.Error())
+						}
+						sendResponseWaitGroup.Done()
+					}(connection, sendResponseWaitGroup)
+				}
+				sendResponseWaitGroup.Wait()
+				println("Sent to clients: ", broadcastMsg.Text)
+				println("-------------------------------------")
+			}
 		case <-ctx.Done():
 			return
 		default:
